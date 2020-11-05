@@ -1,0 +1,48 @@
+module alu (
+    input a[16],
+    input b[16],
+    input alufn[2],    //alufn for which unit to be selected
+    input unit_alufn[6], //alufn to be used in each units
+    
+    output z,
+    output v,
+    output n,
+    output out[16]
+  ) {
+  
+  adder alu_adder (.a(a), .b(b), .alufn0(unit_alufn[0]));
+  boolean alu_boolean (.a(a), .b(b), .alufn(unit_alufn));
+  comparator alu_comparator(.alufn(unit_alufn[5:4]));
+  shifter alu_shifter (.a(a), .b(b), .alufn(unit_alufn));
+  
+  
+
+  always {
+    out = 16b0;
+    alu_comparator.z = alu_adder.z;
+    alu_comparator.v = alu_adder.v;
+    alu_comparator.n = alu_adder.n;    
+//    z = 0;
+//    v = 0;
+//    n = 0;
+    z = alu_adder.z;
+    v = alu_adder.v;
+    n = alu_adder.n;    
+   
+    case (alufn){
+      2b00: // adder
+        z = alu_adder.z;
+        v = alu_adder.v;
+        n = alu_adder.n;
+        out = alu_adder.s;
+      2b10: // boolean
+        out = alu_boolean.bool;
+      2b01: // comparator
+        out[0] = alu_comparator.cmp[0];
+      2b11: // shifter
+        out = alu_shifter.out;
+      default: 
+        out = 0;
+    }
+  }
+}

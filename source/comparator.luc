@@ -1,0 +1,22 @@
+module comparator (
+    input z[16],
+    input v[16],
+    input n[16],
+    input alufn[2],
+    output cmp[16]
+  ) {
+
+  always {
+    cmp[15:1] = 15b0;
+    case(alufn){
+    b01:
+      cmp[0] = z[0]; // A == B
+    b10:
+      cmp[0] = n[0] ^ v[0]; // A < B
+    b11:
+      cmp[0] = z[0] | (n[0] ^ v[0]); // A <= B
+    default:
+      cmp[0] = 0;
+    }
+  }
+}

@@ -1,0 +1,16 @@
+module full_adder (
+    input a,
+    input b,
+    input cin,
+    output s,
+    output cout
+  ) {
+    sig x, y, z;
+  always {
+    x = a ^ b;
+    y = ~& c{x,cin};
+    z = ~& c{a,b};
+    s = x ^ cin;
+    cout = ~& c{y,z};
+  }
+}

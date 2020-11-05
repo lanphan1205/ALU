@@ -1,0 +1,32 @@
+module adder (
+    input alufn0,
+    input a[16],
+    input b[16],
+    output s[16],
+    output z,
+    output v,
+    output n
+  ) {
+    full_adder fulladder[16];
+    zvn_device zvndevice;
+    sig xb[16];
+    var width;
+    var i;
+  always {
+    width = 16;
+    for(i=0; i<width; i++) {
+      xb[i] = b[i] ^ alufn0;
+    }
+    fulladder.a = a;
+    fulladder.b = xb;
+    fulladder.cin[0] = alufn0;
+    fulladder.cin[15:1] = fulladder.cout[14:0];
+    s= fulladder.s;
+    zvndevice.a = a;
+    zvndevice.xb = xb;
+    zvndevice.s = fulladder.s;
+    z = zvndevice.z;
+    v = zvndevice.v;
+    n = zvndevice.n;
+  }
+}

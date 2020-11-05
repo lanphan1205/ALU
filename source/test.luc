@@ -1,0 +1,252 @@
+module test (
+    input clk,  // clock
+    input rst,  // reset
+    input io_dip [3][8], //DIP switches on alchitry
+    input io_button[5],
+    
+    output io_led[3][8] //LED on alchitry
+  ) {
+  
+  .clk(clk){
+    .rst(rst){
+      
+      fsm state = {INPUT_A, INPUT_B, RESULT, SHIFT1, SHIFT2, SHIFT3, SHIFT4, BOOL1, BOOL2, BOOL3, CMP1, CMP2, ADD, SUB};
+      dff alufn[2];
+      dff a[16];
+      dff b[16];
+      dff unit_alufn[6];
+      dff clock[27];
+      dff out[16];
+      
+      
+    }
+    
+  }
+  
+  alu alu (.a(a.q), .b(b.q), .alufn(alufn.q), .unit_alufn(unit_alufn.q));
+  const SPEED =25;
+ 
+  always {
+    io_led[2] = 8b0;
+    alufn.d = io_dip[2][7:6];
+//    io_led [2][7:6] = io_dip[2][7:6];
+    unit_alufn.d = io_dip[2][5:0];
+//    io_led [2][3:0] = io_dip[2][3:0];
+    clock.d =0;
+    
+    case(state.q){
+      
+      state.INPUT_A:
+        a.d = c{io_dip[1],io_dip[0]};
+        io_led[2][5:4] = 3b001;
+        io_led[1] = a.q[15:8];
+        io_led[0] = a.q[7:0];
+        if (io_button[0] == 1){  //if UP butotn is pushed, A will be saved and it will move to INPUT_B state to get B value.
+          state.d = state.INPUT_B;
+        }
+        
+      state.INPUT_B:
+        b.d = c{io_dip[1],io_dip[0]};
+        io_led[2][5:4] = 3b010;
+        io_led[1] = b.q[15:8];
+        io_led[0] = b.q[7:0];
+        if(io_button[1] == 1){  // if CENTER button is pushed, B will be saved and it will show the result.
+          state.d = state.RESULT;
+        }
+      
+      state.RESULT:
+        io_led[2][5:4] = 3b011;
+        io_led[1] = alu.out[15:8];
+        io_led[0] = alu.out[7:0];
+        if(io_button[2] == 1){    // if DOWN button is pushed, it will move to INPUT_A state to get new A value.
+          state.d = state.INPUT_A;
+        }else if (io_button[3] ==1){  // if LEFT button is pushed it will enter auto test mode.
+          //io_led[0] = 8b0;
+          state.d = state.SHIFT1;
+        }
+        
+///////////////////auto starts        
+        
+      state.SHIFT1:       //SHL
+        clock.d = clock.q +1;
+        io_led[1][0] = 1;            // light up led[1][0] to indicate it's state
+        alufn.d = 2b11;
+        unit_alufn.d = 4b0000;
+        a.d = 16b0001;
+        b.d = 16b0010;
+        if (alu.out == 16b0100 && clock.q[SPEED] == 1){  
+          clock.d =0;        
+          state.d = state.SHIFT2;
+        }else if (alu.out != 160100 && clock.q[SPEED] == 1){ 
+          io_led[0][0] = 1;
+          clock.d =0;        
+          state.d = state.SHIFT2;
+        }
+        
+      state.SHIFT2:      //SHR
+        clock.d = clock.q +1;
+        io_led[1][1] = 1;        // light up led[1][1] to indicate it's state
+        alufn.d = 2b11;
+        unit_alufn.d = 4b0001;
+        a.d = 16b1001;
+        b.d = 16b0010;
+        if (alu.out == 16b0010 && clock.q[SPEED] == 1){  
+          clock.d =0;    
+          state.d = state.SHIFT3;
+        }else if (alu.out != 160010 && clock.q[SPEED] == 1){ 
+          io_led[0][1] = 1;        //light up led[0][1] to indicate the error on the current state
+          clock.d =0;    
+          state.d = state.SHIFT3;
+        }
+
+      state.SHIFT3:      //SRA
+        clock.d = clock.q +1;
+        io_led[1][2] = 1;        // light up led[1][2] to indicate it's state
+        alufn.d = 2b11;
+        unit_alufn.d = 4b0011;
+        a.d = 16b1000100010001000;
+        b.d = 16b0010;
+        if (alu.out == 16b1110001000100010 && clock.q[SPEED] == 1){ 
+          clock.d =0;     
+          state.d = state.SHIFT4;
+        }else if(alu.out != 16b1110001000100010 && clock.q[SPEED] == 1){ 
+          io_led[0][2] = 1;        //light up led[0][2] to indicate the error on the current state
+          clock.d =0;     
+          state.d = state.SHIFT4;
+        }
+        
+      state.SHIFT4:      //SHL WRONG
+        clock.d = clock.q +1;
+        io_led[1][3] = 1;        // light up led[1][3] to indicate it's state
+        alufn.d = 2b11;
+        unit_alufn.d = 4b0000;
+        a.d = 16b0100;
+        b.d = 16b0001;
+        if (alu.out == 16b1111 && clock.q[SPEED] == 1){ 
+          clock.d =0;  
+          state.d = state.BOOL1;
+        }else if (alu.out != 16b1111 && clock.q[SPEED] == 1){  
+          io_led[0][3] = 1;        //light up led[0][3] to indicate the error on the current state
+          clock.d =0;
+          if (io_button[4] == 1){
+            state.d = state.BOOL1;}
+        }
+     state.BOOL1:      //AND
+				clock.d = clock.q +1;
+				io_led[1][4] = 1;        // light up led[1][4] to indicate it's state
+				alufn.d = 2b10;
+				unit_alufn.d = 4b1000;  //
+				a.d = 16b0000;
+				b.d = 16b0000;
+				if (alu.out == 16b0000 && clock.q[SPEED] == 1){ 
+         clock.d =0;
+					state.d = state.BOOL2;
+				}else if (alu.out != 16b0000 && clock.q[SPEED] == 1){ 
+					io_led[0][4] = 1;        //light up led[0][4] to indicate the error on the current state
+         clock.d =0;
+					state.d = state.BOOL2;
+				}
+				
+			state.BOOL2:      //"B"
+				clock.d = clock.q +1;
+				io_led[1][5] = 1;        // light up led[1][5] to indicate it's state
+				alufn.d = 2b10;
+				unit_alufn.d = 4b0101;  //
+				a.d = 16b1111;
+				b.d = 16b0000;
+				if (alu.out == 16b0000 && clock.q[SPEED] == 1){ 
+         clock.d =0;
+					state.d = state.BOOL3;
+				}else if (alu.out != 16b0000 && clock.q[SPEED] == 1){ 
+					io_led[0][5] = 1;        //light up led[0][5] to indicate the error on the current state
+         clock.d =0;
+					state.d = state.BOOL3;
+				}     
+				
+			state.BOOL3:      //NOR
+				clock.d = clock.q +1;
+				io_led[1][6] = 1;        // light up led[1][6] to indicate it's state
+				alufn.d = 2b10;
+				unit_alufn.d = 4b0001;  //
+				a.d = 16b1111;
+				b.d = 16b0000;
+				if (alu.out == 16b0000 && clock.q[SPEED] == 1){ 
+					 clock.d =0;
+          state.d = state.CMP1;
+				}else if (alu.out != 16b0000 && clock.q[SPEED] == 1){ 
+					 io_led[0][6] = 1;}        //light up led[0][6] to indicate the error on the current state
+          clock.d =0;
+          state.d = state.CMP1;
+				
+			state.CMP1:      //A<B
+				clock.d = clock.q +1;
+				io_led[1][7] = 1;        // light up led[1][7] to indicate it's state
+				alufn.d = 2b01;
+				unit_alufn.d = 4b1000;
+				a.d = 16b1111;
+				b.d = 16b0000;
+				if (alu.out == 16b0000 && clock.q[SPEED] == 1){ 
+					 clock.d =0;
+          state.d = state.CMP2;
+				}else if (alu.out != 16b0000 && clock.q[SPEED] == 1){ 
+					 io_led[0][7] = 1;        //light up led[0][7] to indicate the error on the current state
+          clock.d =0;
+          state.d = state.CMP2;
+				}      
+				
+			state.CMP2:      // ALUFN[2:1]=00
+				clock.d = clock.q +1;
+				io_led[2][0] = 1;        // light up led[2][0] to indicate it's state
+				alufn.d = 2b01;
+				unit_alufn.d = 4b0000;
+				a.d = 16b1111;
+				b.d = 16b0000;
+				if (alu.out == 16b0000 && clock.q[SPEED] == 1){ 
+					 clock.d =0;
+          state.d = state.ADD;
+				}else if (alu.out != 16b0000 && clock.q[SPEED] == 1){ 
+					 io_led[0] = 8b00001001;        //light up io_led[0] = 8b00001001 to indicate the error on the current state
+          clock.d =0;
+          state.d = state.ADD;
+				} 
+        
+     state.ADD:       //ADD
+				clock.d = clock.q +1;
+				io_led[2][1] = 1;        // light up led[2][1] to indicate it's state
+				alufn.d = 2b00;
+				unit_alufn.d = 4b0000;
+				a.d = 16h7fff;
+				b.d = 16h0fff;
+				if (alu.out == 16h8ffe && clock.q[SPEED] == 1){ 
+					 clock.d =0;
+          state.d = state.SUB;
+				}else if (alu.out != 16h8ffd && clock.q[SPEED] == 1){ 
+					 clock.d =0;
+          io_led[0] = 8b00001010;        //light up io_led[0] = 8b00001010 to indicate the error on the current state
+          if(io_button[4] ==1){
+            state.d = state.SUB;
+          }
+          
+				}
+        
+     state.SUB:       //SUB
+				clock.d = clock.q +1;
+				io_led[2][2] = 1;        // light up led[2][2] to indicate it's state
+				alufn.d = 2b00;
+				unit_alufn.d = 4b0001;
+				a.d = 16hf0ff;
+				b.d = 16hdf01;
+				if (alu.out == 16h71fd && clock.q[SPEED] == 1){
+         clock.d =0;   
+					io_led [1] = 8b1;
+         state.d = state.INPUT_A;                                    //reached at the end of the state. light up led[1] to indicate
+				}else if (alu.out != 16h11fe && clock.q[SPEED] == 1){ 
+					clock.d =0;                             //reached at the end of the state. light up led[1] to indicate
+         io_led[0] = 8b00001011;
+         if(io_button[4] ==1){
+           state.d = state.INPUT_A;
+         }        //light up io_led[0] = 8b00001011 to indicate the error on the current state
+				}      
+    } 
+  }
+}
