@@ -236,7 +236,7 @@ module test (
 				unit_alufn.d = 4b0001;
 				a.d = 16hf0ff;
 				b.d = 16h7f01;
-				if (alu.out == 16h71fd && clock.q[SPEED] == 1){
+				if (alu.out == 16h71fe && clock.q[SPEED] == 1){
          clock.d =0;   
 					io_led [1] = 8b1;
          state.d = state.INPUT_A;                                    //reached at the end of the state. light up led[1] to indicate
