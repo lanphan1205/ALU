@@ -220,7 +220,7 @@ module test (
 				if (alu.out == 16h8ffe && clock.q[SPEED] == 1){ 
 					 clock.d =0;
           state.d = state.SUB;
-				}else if (alu.out != 16h8ffd && clock.q[SPEED] == 1){ 
+				}else if (alu.out != 16h8ffe && clock.q[SPEED] == 1){ 
 					 clock.d =0;
           io_led[0] = 8b00001010;        //light up io_led[0] = 8b00001010 to indicate the error on the current state
           if(io_button[4] ==1){
@@ -235,12 +235,12 @@ module test (
 				alufn.d = 2b00;
 				unit_alufn.d = 4b0001;
 				a.d = 16hf0ff;
-				b.d = 16hdf01;
+				b.d = 16h7f01;
 				if (alu.out == 16h71fd && clock.q[SPEED] == 1){
          clock.d =0;   
 					io_led [1] = 8b1;
          state.d = state.INPUT_A;                                    //reached at the end of the state. light up led[1] to indicate
-				}else if (alu.out != 16h11fe && clock.q[SPEED] == 1){ 
+				}else if (alu.out != 16h71fe && clock.q[SPEED] == 1){ 
 					clock.d =0;                             //reached at the end of the state. light up led[1] to indicate
          io_led[0] = 8b00001011;
          if(io_button[4] ==1){
